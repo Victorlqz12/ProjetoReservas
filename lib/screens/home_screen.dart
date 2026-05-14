@@ -165,7 +165,7 @@ class _StatusBanner extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.15),
+            color: Colors.black.withValues(alpha: 0.15),
             blurRadius: 8,
             offset: const Offset(0, 4),
           ),
@@ -244,7 +244,7 @@ class _Calendario extends StatelessWidget {
           ),
           calendarStyle: CalendarStyle(
             todayDecoration: BoxDecoration(
-              color: const Color(0xFF1565C0).withOpacity(0.8),
+              color: const Color(0xFF1565C0).withValues(alpha: 0.8),
               shape: BoxShape.circle,
             ),
             todayTextStyle: const TextStyle(
@@ -388,7 +388,7 @@ class _ReservaCard extends StatelessWidget {
                             vertical: 4,
                           ),
                           decoration: BoxDecoration(
-                            color: statusColor.withOpacity(0.1),
+                            color: statusColor.withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(20),
                             border: Border.all(color: statusColor),
                           ),
