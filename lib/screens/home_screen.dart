@@ -286,12 +286,17 @@ class _Calendario extends StatelessWidget {
           lastDay: DateTime(2030),
           focusedDay: focusedDay,
           onPageChanged: onPageChanged,
+          daysOfWeekHeight: 32,
           headerStyle: const HeaderStyle(
             formatButtonVisible: false,
             titleCentered: true,
             titleTextStyle: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             leftChevronIcon: Icon(Icons.chevron_left, size: 28),
             rightChevronIcon: Icon(Icons.chevron_right, size: 28),
+          ),
+          daysOfWeekStyle: const DaysOfWeekStyle(
+            weekdayStyle: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Colors.black87),
+            weekendStyle: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Colors.red),
           ),
           calendarStyle: CalendarStyle(
             todayDecoration: BoxDecoration(
