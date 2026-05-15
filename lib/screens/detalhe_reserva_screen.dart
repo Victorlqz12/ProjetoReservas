@@ -251,6 +251,17 @@ class DetalheReservaScreen extends StatelessWidget {
     );
 
     if (confirmar == true && context.mounted) {
+      final temInternet = await FirestoreService.temInternet();
+      if (!context.mounted) return;
+      if (!temInternet) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Sem conexão com a internet. Conecte-se e tente novamente.'),
+            backgroundColor: Colors.red,
+          ),
+        );
+        return;
+      }
       await FirestoreService().deleteReserva(reserva.id!);
       if (context.mounted) Navigator.pop(context);
     }

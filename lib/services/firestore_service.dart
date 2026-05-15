@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/reserva.dart';
 
@@ -24,6 +25,16 @@ class FirestoreService {
       _db.collection(_col).doc(r.id).update(r.toFirestore());
 
   Future<void> deleteReserva(String id) => _db.collection(_col).doc(id).delete();
+
+  static Future<bool> temInternet() async {
+    try {
+      final result = await InternetAddress.lookup('firestore.googleapis.com')
+          .timeout(const Duration(seconds: 5));
+      return result.isNotEmpty && result[0].rawAddress.isNotEmpty;
+    } catch (_) {
+      return false;
+    }
+  }
 
   bool hasOverlap(List<Reserva> lista, DateTime inicio, DateTime fim, String? excludeId) {
     for (final r in lista) {

@@ -150,6 +150,13 @@ class _FormReservaScreenState extends State<FormReservaScreen> {
 
     setState(() => _salvando = true);
 
+    final temInternet = await FirestoreService.temInternet();
+    if (!temInternet) {
+      if (mounted) setState(() => _salvando = false);
+      _mostrarErro('Sem conexão com a internet.\nConecte-se e tente novamente.');
+      return;
+    }
+
     try {
       if (widget.reserva == null) {
         await _service.addReserva(Reserva(

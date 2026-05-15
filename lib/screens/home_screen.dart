@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:table_calendar/table_calendar.dart';
 import 'package:intl/intl.dart';
@@ -17,9 +18,13 @@ class _HomeScreenState extends State<HomeScreen> {
   final _service = FirestoreService();
   final _scrollController = ScrollController();
   final _buscaCtrl = TextEditingController();
-  late final Stream<List<Reserva>> _stream;
+  late Stream<List<Reserva>> _stream;
+  Timer? _loadingTimer;
+  Timer? _checkTimer;
+  bool _loadingTimeout = false;
+  bool _semInternet = false;
   DateTime _focusedDay = DateTime.now();
-  int? _mesFiltro;
+  int? _mesFiltro = DateTime.now().month;
   int _anoFiltro = DateTime.now().year;
   bool _buscando = false;
   String _termoBusca = '';
@@ -27,11 +32,32 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
+    _iniciarStream();
+    _iniciarVerificacaoConectividade();
+  }
+
+  void _iniciarStream() {
     _stream = _service.streamReservas();
+    _loadingTimeout = false;
+    _loadingTimer?.cancel();
+    _loadingTimer = Timer(const Duration(seconds: 8), () {
+      if (mounted) setState(() => _loadingTimeout = true);
+    });
+  }
+
+  void _iniciarVerificacaoConectividade() {
+    _checkTimer = Timer.periodic(const Duration(seconds: 10), (_) async {
+      final tem = await FirestoreService.temInternet();
+      if (mounted && tem != !_semInternet) {
+        setState(() => _semInternet = !tem);
+      }
+    });
   }
 
   @override
   void dispose() {
+    _loadingTimer?.cancel();
+    _checkTimer?.cancel();
     _scrollController.dispose();
     _buscaCtrl.dispose();
     super.dispose();
@@ -90,10 +116,64 @@ class _HomeScreenState extends State<HomeScreen> {
               : IconButton(icon: const Icon(Icons.search), onPressed: _abrirBusca),
         ],
       ),
-      body: StreamBuilder<List<Reserva>>(
+      body: Column(
+        children: [
+          AnimatedSwitcher(
+            duration: const Duration(milliseconds: 250),
+            child: _semInternet
+                ? Container(
+                    key: const ValueKey('offline'),
+                    width: double.infinity,
+                    color: const Color(0xFFC62828),
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                    child: const Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.wifi_off, color: Colors.white, size: 16),
+                        SizedBox(width: 8),
+                        Text(
+                          'Sem conexão com a internet',
+                          style: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w600),
+                        ),
+                      ],
+                    ),
+                  )
+                : const SizedBox.shrink(key: ValueKey('online')),
+          ),
+          Expanded(
+            child: StreamBuilder<List<Reserva>>(
         stream: _stream,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
+            if (_loadingTimeout) {
+              return Center(
+                child: Padding(
+                  padding: const EdgeInsets.all(24),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Icon(Icons.wifi_off, size: 64, color: Colors.grey),
+                      const SizedBox(height: 16),
+                      const Text(
+                        'Sem conexão com a internet.\nVerifique sua conexão e tente novamente.',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(fontSize: 18, color: Colors.grey),
+                      ),
+                      const SizedBox(height: 24),
+                      ElevatedButton.icon(
+                        onPressed: () => setState(_iniciarStream),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF2E7D32),
+                          foregroundColor: Colors.white,
+                        ),
+                        icon: const Icon(Icons.refresh),
+                        label: const Text('Tentar novamente', style: TextStyle(fontSize: 16)),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            }
             return const Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -261,6 +341,9 @@ class _HomeScreenState extends State<HomeScreen> {
             ],
           );
         },
+            ),
+          ),
+        ],
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => Navigator.push(
