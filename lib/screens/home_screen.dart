@@ -473,6 +473,56 @@ class _SectionTitle extends StatelessWidget {
   }
 }
 
+class _BadgePagamento extends StatelessWidget {
+  final Reserva reserva;
+
+  const _BadgePagamento({required this.reserva});
+
+  @override
+  Widget build(BuildContext context) {
+    final IconData icon;
+    final String label;
+    final Color cor;
+
+    switch (reserva.statusPagamento) {
+      case 'pago_total':
+        icon = Icons.check_circle;
+        label = 'Pago';
+        cor = const Color(0xFF2E7D32);
+        break;
+      case 'entrada':
+        icon = Icons.payments_outlined;
+        label = 'Entrada';
+        cor = const Color(0xFF1565C0);
+        break;
+      default:
+        icon = Icons.hourglass_empty;
+        label = 'Pendente';
+        cor = Colors.orange.shade700;
+    }
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      decoration: BoxDecoration(
+        color: cor.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: cor.withValues(alpha: 0.5)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 12, color: cor),
+          const SizedBox(width: 3),
+          Text(
+            label,
+            style: TextStyle(fontSize: 11, color: cor, fontWeight: FontWeight.bold),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _ReservaCard extends StatelessWidget {
   final Reserva reserva;
   final VoidCallback onTap;
@@ -558,13 +608,19 @@ class _ReservaCard extends StatelessWidget {
                       style: const TextStyle(fontSize: 15, color: Colors.black87),
                     ),
                     const SizedBox(height: 4),
-                    Text(
-                      'R\$ ${NumberFormat('#,##0.00', 'pt_BR').format(reserva.valor)}',
-                      style: const TextStyle(
-                        fontSize: 16,
-                        color: Color(0xFF2E7D32),
-                        fontWeight: FontWeight.w600,
-                      ),
+                    Row(
+                      children: [
+                        Text(
+                          'R\$ ${NumberFormat('#,##0.00', 'pt_BR').format(reserva.valor)}',
+                          style: const TextStyle(
+                            fontSize: 16,
+                            color: Color(0xFF2E7D32),
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        _BadgePagamento(reserva: reserva),
+                      ],
                     ),
                   ],
                 ),
