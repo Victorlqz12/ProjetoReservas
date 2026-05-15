@@ -129,6 +129,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   _mesFiltro = null;
                 }),
               ),
+              _ResumoFinanceiro(reservas: [...proximas, ...passadas]),
               if (proximas.isNotEmpty) ...[
                 const _SectionTitle(title: 'Próximas Reservas'),
                 ...proximas.map((r) => _ReservaCard(
@@ -470,6 +471,113 @@ class _SectionTitle extends StatelessWidget {
         ),
       ),
     );
+  }
+}
+
+class _ResumoFinanceiro extends StatelessWidget {
+  final List<Reserva> reservas;
+
+  const _ResumoFinanceiro({required this.reservas});
+
+  @override
+  Widget build(BuildContext context) {
+    if (reservas.isEmpty) return const SizedBox.shrink();
+
+    double totalRecebido = 0;
+    double totalAReceber = 0;
+
+    for (final r in reservas) {
+      switch (r.statusPagamento) {
+        case 'pago_total':
+          totalRecebido += r.valor;
+          break;
+        case 'entrada':
+          totalRecebido += r.valorEntrada;
+          totalAReceber += r.valorRestante;
+          break;
+        default:
+          totalAReceber += r.valor;
+      }
+    }
+
+    final fmt = NumberFormat('#,##0.00', 'pt_BR');
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+      child: Card(
+        elevation: 2,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
+          child: Row(
+            children: [
+              _ItemResumo(
+                label: 'Reservas',
+                valor: '${reservas.length}',
+                icon: Icons.calendar_month,
+                cor: const Color(0xFF1565C0),
+              ),
+              _Divisor(),
+              _ItemResumo(
+                label: 'Recebido',
+                valor: 'R\$ ${fmt.format(totalRecebido)}',
+                icon: Icons.check_circle_outline,
+                cor: const Color(0xFF2E7D32),
+              ),
+              _Divisor(),
+              _ItemResumo(
+                label: 'A receber',
+                valor: 'R\$ ${fmt.format(totalAReceber)}',
+                icon: Icons.hourglass_empty,
+                cor: Colors.orange.shade700,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _ItemResumo extends StatelessWidget {
+  final String label;
+  final String valor;
+  final IconData icon;
+  final Color cor;
+
+  const _ItemResumo({
+    required this.label,
+    required this.valor,
+    required this.icon,
+    required this.cor,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Expanded(
+      child: Column(
+        children: [
+          Icon(icon, color: cor, size: 22),
+          const SizedBox(height: 4),
+          Text(
+            valor,
+            style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: cor),
+            textAlign: TextAlign.center,
+          ),
+          Text(
+            label,
+            style: const TextStyle(fontSize: 11, color: Colors.grey),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _Divisor extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Container(width: 1, height: 40, color: Colors.grey.shade200);
   }
 }
 
