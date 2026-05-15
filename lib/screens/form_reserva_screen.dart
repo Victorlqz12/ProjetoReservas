@@ -22,10 +22,12 @@ class _FormReservaScreenState extends State<FormReservaScreen> {
   late final TextEditingController _telCtrl;
   late final TextEditingController _emailCtrl;
   late final TextEditingController _valorCtrl;
+  late final TextEditingController _entradaCtrl;
   late final TextEditingController _obsCtrl;
 
   DateTime? _dataInicio;
   DateTime? _dataFim;
+  String _statusPagamento = 'pendente';
   bool _salvando = false;
 
   final _fmt = DateFormat('dd/MM/yyyy');
@@ -40,9 +42,15 @@ class _FormReservaScreenState extends State<FormReservaScreen> {
     _valorCtrl = TextEditingController(
       text: r != null ? r.valor.toStringAsFixed(2).replaceAll('.', ',') : '',
     );
+    _entradaCtrl = TextEditingController(
+      text: (r != null && r.valorEntrada > 0)
+          ? r.valorEntrada.toStringAsFixed(2).replaceAll('.', ',')
+          : '',
+    );
     _obsCtrl = TextEditingController(text: r?.observacoes ?? '');
     _dataInicio = r?.dataInicio;
     _dataFim = r?.dataFim;
+    _statusPagamento = r?.statusPagamento ?? 'pendente';
   }
 
   @override
@@ -51,6 +59,7 @@ class _FormReservaScreenState extends State<FormReservaScreen> {
     _telCtrl.dispose();
     _emailCtrl.dispose();
     _valorCtrl.dispose();
+    _entradaCtrl.dispose();
     _obsCtrl.dispose();
     super.dispose();
   }
@@ -115,6 +124,22 @@ class _FormReservaScreenState extends State<FormReservaScreen> {
     final valorStr = _valorCtrl.text.replaceAll('.', '').replaceAll(',', '.');
     final valor = double.tryParse(valorStr) ?? 0;
 
+    final entradaStr = _entradaCtrl.text.replaceAll('.', '').replaceAll(',', '.');
+    final valorEntrada = _statusPagamento == 'entrada'
+        ? (double.tryParse(entradaStr) ?? 0)
+        : 0.0;
+
+    if (_statusPagamento == 'entrada') {
+      if (valorEntrada <= 0) {
+        _mostrarErro('Informe o valor da entrada.');
+        return;
+      }
+      if (valorEntrada >= valor) {
+        _mostrarErro('O valor da entrada deve ser menor que o valor total.\nSe foi pago tudo, selecione "Pago integralmente".');
+        return;
+      }
+    }
+
     final todas = widget.todasReservas ?? await _service.getReservas();
     if (_service.hasOverlap(todas, _dataInicio!, _dataFim!, widget.reserva?.id)) {
       _mostrarErro(
@@ -134,6 +159,8 @@ class _FormReservaScreenState extends State<FormReservaScreen> {
           dataInicio: _dataInicio!,
           dataFim: _dataFim!,
           valor: valor,
+          valorEntrada: valorEntrada,
+          statusPagamento: _statusPagamento,
           observacoes: _obsCtrl.text.trim(),
         ));
       } else {
@@ -144,6 +171,8 @@ class _FormReservaScreenState extends State<FormReservaScreen> {
           dataInicio: _dataInicio,
           dataFim: _dataFim,
           valor: valor,
+          valorEntrada: valorEntrada,
+          statusPagamento: _statusPagamento,
           observacoes: _obsCtrl.text.trim(),
         ));
       }
@@ -291,6 +320,88 @@ class _FormReservaScreenState extends State<FormReservaScreen> {
                   return null;
                 },
               ),
+              const SizedBox(height: 20),
+              const _LabelText(text: 'Situação do pagamento *'),
+              const SizedBox(height: 10),
+              Row(
+                children: [
+                  _ChipPagamento(
+                    label: 'Pendente',
+                    icon: Icons.hourglass_empty,
+                    selecionado: _statusPagamento == 'pendente',
+                    cor: Colors.orange,
+                    onTap: () => setState(() {
+                      _statusPagamento = 'pendente';
+                      _entradaCtrl.clear();
+                    }),
+                  ),
+                  const SizedBox(width: 8),
+                  _ChipPagamento(
+                    label: 'Entrada paga',
+                    icon: Icons.payments_outlined,
+                    selecionado: _statusPagamento == 'entrada',
+                    cor: const Color(0xFF1565C0),
+                    onTap: () => setState(() => _statusPagamento = 'entrada'),
+                  ),
+                  const SizedBox(width: 8),
+                  _ChipPagamento(
+                    label: 'Pago total',
+                    icon: Icons.check_circle_outline,
+                    selecionado: _statusPagamento == 'pago_total',
+                    cor: const Color(0xFF2E7D32),
+                    onTap: () => setState(() {
+                      _statusPagamento = 'pago_total';
+                      _entradaCtrl.clear();
+                    }),
+                  ),
+                ],
+              ),
+              if (_statusPagamento == 'entrada') ...[
+                const SizedBox(height: 16),
+                _Campo(
+                  label: 'Valor da entrada (R\$) *',
+                  controller: _entradaCtrl,
+                  icon: Icons.arrow_downward,
+                  hint: 'Ex: 500,00',
+                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                  inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[\d,.]'))],
+                ),
+                const SizedBox(height: 8),
+                ValueListenableBuilder(
+                  valueListenable: _entradaCtrl,
+                  builder: (_, value, child) {
+                    final totalStr = _valorCtrl.text.replaceAll('.', '').replaceAll(',', '.');
+                    final entStr = _entradaCtrl.text.replaceAll('.', '').replaceAll(',', '.');
+                    final total = double.tryParse(totalStr) ?? 0;
+                    final entrada = double.tryParse(entStr) ?? 0;
+                    final restante = total - entrada;
+                    if (entrada <= 0 || restante < 0) return const SizedBox.shrink();
+                    return Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFE3F2FD),
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(color: const Color(0xFF1565C0)),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Icon(Icons.arrow_forward, color: Color(0xFF1565C0), size: 18),
+                          const SizedBox(width: 8),
+                          Text(
+                            'Restante a receber: R\$ ${NumberFormat('#,##0.00', 'pt_BR').format(restante)}',
+                            style: const TextStyle(
+                              fontSize: 16,
+                              color: Color(0xFF1565C0),
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  },
+                ),
+              ],
               const SizedBox(height: 16),
               _Campo(
                 label: 'Observações (opcional)',
@@ -462,6 +573,58 @@ class _BotaoData extends StatelessWidget {
               ],
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ChipPagamento extends StatelessWidget {
+  final String label;
+  final IconData icon;
+  final bool selecionado;
+  final Color cor;
+  final VoidCallback onTap;
+
+  const _ChipPagamento({
+    required this.label,
+    required this.icon,
+    required this.selecionado,
+    required this.cor,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Expanded(
+      child: GestureDetector(
+        onTap: onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 150),
+          padding: const EdgeInsets.symmetric(vertical: 10),
+          decoration: BoxDecoration(
+            color: selecionado ? cor.withValues(alpha: 0.12) : Colors.white,
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(
+              color: selecionado ? cor : Colors.grey.shade300,
+              width: selecionado ? 2 : 1,
+            ),
+          ),
+          child: Column(
+            children: [
+              Icon(icon, color: selecionado ? cor : Colors.grey, size: 22),
+              const SizedBox(height: 4),
+              Text(
+                label,
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: selecionado ? FontWeight.bold : FontWeight.normal,
+                  color: selecionado ? cor : Colors.grey,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

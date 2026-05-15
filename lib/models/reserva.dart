@@ -8,6 +8,8 @@ class Reserva {
   final DateTime dataInicio;
   final DateTime dataFim;
   final double valor;
+  final double valorEntrada;
+  final String statusPagamento; // 'pendente', 'entrada', 'pago_total'
   final String observacoes;
   final DateTime criadoEm;
 
@@ -19,9 +21,13 @@ class Reserva {
     required this.dataInicio,
     required this.dataFim,
     required this.valor,
+    this.valorEntrada = 0,
+    this.statusPagamento = 'pendente',
     this.observacoes = '',
     DateTime? criadoEm,
   }) : criadoEm = criadoEm ?? DateTime.now();
+
+  double get valorRestante => valor - valorEntrada;
 
   int get numeroDias => dataFim.difference(dataInicio).inDays + 1;
 
@@ -46,6 +52,8 @@ class Reserva {
       dataInicio: (data['dataInicio'] as Timestamp).toDate(),
       dataFim: (data['dataFim'] as Timestamp).toDate(),
       valor: (data['valor'] ?? 0.0).toDouble(),
+      valorEntrada: (data['valorEntrada'] ?? 0.0).toDouble(),
+      statusPagamento: data['statusPagamento'] ?? 'pendente',
       observacoes: data['observacoes'] ?? '',
       criadoEm: (data['criadoEm'] as Timestamp).toDate(),
     );
@@ -58,6 +66,8 @@ class Reserva {
         'dataInicio': Timestamp.fromDate(dataInicio),
         'dataFim': Timestamp.fromDate(dataFim),
         'valor': valor,
+        'valorEntrada': valorEntrada,
+        'statusPagamento': statusPagamento,
         'observacoes': observacoes,
         'criadoEm': Timestamp.fromDate(criadoEm),
       };
@@ -70,6 +80,8 @@ class Reserva {
     DateTime? dataInicio,
     DateTime? dataFim,
     double? valor,
+    double? valorEntrada,
+    String? statusPagamento,
     String? observacoes,
   }) {
     return Reserva(
@@ -80,6 +92,8 @@ class Reserva {
       dataInicio: dataInicio ?? this.dataInicio,
       dataFim: dataFim ?? this.dataFim,
       valor: valor ?? this.valor,
+      valorEntrada: valorEntrada ?? this.valorEntrada,
+      statusPagamento: statusPagamento ?? this.statusPagamento,
       observacoes: observacoes ?? this.observacoes,
       criadoEm: criadoEm,
     );

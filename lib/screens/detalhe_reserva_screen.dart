@@ -117,6 +117,33 @@ class DetalheReservaScreen extends StatelessWidget {
                   valor: 'R\$ ${fmtValor.format(reserva.valor)}',
                   destaque: true,
                 ),
+                if (reserva.statusPagamento == 'pago_total')
+                  _InfoRow(
+                    icon: Icons.check_circle,
+                    label: 'Status',
+                    valor: 'Pago integralmente',
+                    cor: const Color(0xFF2E7D32),
+                  )
+                else if (reserva.statusPagamento == 'entrada') ...[
+                  _InfoRow(
+                    icon: Icons.payments_outlined,
+                    label: 'Entrada recebida',
+                    valor: 'R\$ ${fmtValor.format(reserva.valorEntrada)}',
+                    cor: const Color(0xFF1565C0),
+                  ),
+                  _InfoRow(
+                    icon: Icons.arrow_forward,
+                    label: 'Restante a receber',
+                    valor: 'R\$ ${fmtValor.format(reserva.valorRestante)}',
+                    cor: Colors.orange.shade800,
+                  ),
+                ] else
+                  _InfoRow(
+                    icon: Icons.hourglass_empty,
+                    label: 'Status',
+                    valor: 'Pagamento pendente',
+                    cor: Colors.orange.shade800,
+                  ),
               ],
             ),
             if (reserva.observacoes.isNotEmpty) ...[
@@ -269,12 +296,14 @@ class _InfoRow extends StatelessWidget {
   final String label;
   final String valor;
   final bool destaque;
+  final Color? cor;
 
   const _InfoRow({
     required this.icon,
     required this.label,
     required this.valor,
     this.destaque = false,
+    this.cor,
   });
 
   @override
@@ -283,7 +312,7 @@ class _InfoRow extends StatelessWidget {
       padding: const EdgeInsets.symmetric(vertical: 6),
       child: Row(
         children: [
-          Icon(icon, size: 22, color: const Color(0xFF2E7D32)),
+          Icon(icon, size: 22, color: cor ?? const Color(0xFF2E7D32)),
           const SizedBox(width: 12),
           Expanded(
             child: Column(
@@ -297,8 +326,8 @@ class _InfoRow extends StatelessWidget {
                   valor,
                   style: TextStyle(
                     fontSize: destaque ? 20 : 17,
-                    fontWeight: destaque ? FontWeight.bold : FontWeight.normal,
-                    color: destaque ? const Color(0xFF2E7D32) : Colors.black87,
+                    fontWeight: (destaque || cor != null) ? FontWeight.bold : FontWeight.normal,
+                    color: cor ?? (destaque ? const Color(0xFF2E7D32) : Colors.black87),
                   ),
                 ),
               ],
