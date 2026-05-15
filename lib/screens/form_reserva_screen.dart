@@ -237,12 +237,11 @@ class _FormReservaScreenState extends State<FormReservaScreen> {
               ),
               const SizedBox(height: 16),
               _Campo(
-                label: 'Telefone *',
+                label: 'Telefone (opcional)',
                 controller: _telCtrl,
                 icon: Icons.phone,
                 hint: 'Ex: (11) 99999-9999',
                 keyboardType: TextInputType.phone,
-                validator: (v) => (v == null || v.trim().isEmpty) ? 'Informe o telefone' : null,
               ),
               const SizedBox(height: 16),
               _Campo(
