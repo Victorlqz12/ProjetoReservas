@@ -15,7 +15,25 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   final _service = FirestoreService();
+  final _scrollController = ScrollController();
   DateTime _focusedDay = DateTime.now();
+  int? _mesFiltro;
+  int _anoFiltro = DateTime.now().year;
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  List<Reserva> _filtrarPorMes(List<Reserva> reservas) {
+    if (_mesFiltro == null) return reservas;
+    final inicioMes = DateTime(_anoFiltro, _mesFiltro!, 1);
+    final fimMes = DateTime(_anoFiltro, _mesFiltro! + 1, 0);
+    return reservas
+        .where((r) => !r.dataInicio.isAfter(fimMes) && !r.dataFim.isBefore(inicioMes))
+        .toList();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -78,10 +96,12 @@ class _HomeScreenState extends State<HomeScreen> {
             }
           }
 
-          final proximas = reservas.where((r) => !r.isPast).toList();
-          final passadas = reservas.where((r) => r.isPast).toList();
+          final proximas = _filtrarPorMes(reservas.where((r) => !r.isPast).toList());
+          final passadas = _filtrarPorMes(reservas.where((r) => r.isPast).toList());
+          final semResultados = reservas.isNotEmpty && proximas.isEmpty && passadas.isEmpty;
 
           return ListView(
+            controller: _scrollController,
             padding: const EdgeInsets.only(bottom: 100),
             children: [
               _StatusBanner(reservaAtiva: reservaAtiva),
@@ -89,6 +109,15 @@ class _HomeScreenState extends State<HomeScreen> {
                 focusedDay: _focusedDay,
                 datasBloqueadas: datasBloqueadas,
                 onPageChanged: (d) => setState(() => _focusedDay = d),
+              ),
+              _FiltroMes(
+                mesSelecionado: _mesFiltro,
+                anoSelecionado: _anoFiltro,
+                onMesSelecionado: (mes) => setState(() => _mesFiltro = mes),
+                onAnoAlterado: (ano) => setState(() {
+                  _anoFiltro = ano;
+                  _mesFiltro = null;
+                }),
               ),
               if (proximas.isNotEmpty) ...[
                 const _SectionTitle(title: 'Próximas Reservas'),
@@ -113,6 +142,21 @@ class _HomeScreenState extends State<HomeScreen> {
                       SizedBox(height: 16),
                       Text(
                         'Nenhuma reserva ainda.\nToque no botão abaixo para adicionar.',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(fontSize: 18, color: Colors.grey),
+                      ),
+                    ],
+                  ),
+                ),
+              if (semResultados)
+                const Padding(
+                  padding: EdgeInsets.all(40),
+                  child: Column(
+                    children: [
+                      Icon(Icons.search_off, size: 64, color: Colors.grey),
+                      SizedBox(height: 16),
+                      Text(
+                        'Nenhuma reserva neste mês.',
                         textAlign: TextAlign.center,
                         style: TextStyle(fontSize: 18, color: Colors.grey),
                       ),
@@ -296,6 +340,96 @@ class _Calendario extends StatelessWidget {
                 ),
               );
             },
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _FiltroMes extends StatelessWidget {
+  final int? mesSelecionado;
+  final int anoSelecionado;
+  final void Function(int?) onMesSelecionado;
+  final void Function(int) onAnoAlterado;
+
+  const _FiltroMes({
+    required this.mesSelecionado,
+    required this.anoSelecionado,
+    required this.onMesSelecionado,
+    required this.onAnoAlterado,
+  });
+
+  static const _meses = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              IconButton(
+                icon: const Icon(Icons.chevron_left),
+                onPressed: () => onAnoAlterado(anoSelecionado - 1),
+              ),
+              Text(
+                '$anoSelecionado',
+                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              ),
+              IconButton(
+                icon: const Icon(Icons.chevron_right),
+                onPressed: () => onAnoAlterado(anoSelecionado + 1),
+              ),
+            ],
+          ),
+          const SizedBox(height: 4),
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              children: [
+                _chip('Todos', mesSelecionado == null, () => onMesSelecionado(null)),
+                ...List.generate(12, (i) => _chip(
+                  _meses[i],
+                  mesSelecionado == i + 1,
+                  () => onMesSelecionado(mesSelecionado == i + 1 ? null : i + 1),
+                )),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _chip(String label, bool selecionado, VoidCallback onTap) {
+    return Padding(
+      padding: const EdgeInsets.only(right: 8),
+      child: GestureDetector(
+        onTap: onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 150),
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+          decoration: BoxDecoration(
+            color: selecionado ? const Color(0xFF2E7D32) : Colors.white,
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(
+              color: selecionado ? const Color(0xFF2E7D32) : Colors.grey.shade300,
+            ),
+            boxShadow: selecionado
+                ? [BoxShadow(color: const Color(0xFF2E7D32).withValues(alpha: 0.3), blurRadius: 4, offset: const Offset(0, 2))]
+                : [],
+          ),
+          child: Text(
+            label,
+            style: TextStyle(
+              color: selecionado ? Colors.white : Colors.black87,
+              fontWeight: selecionado ? FontWeight.bold : FontWeight.normal,
+              fontSize: 14,
+            ),
           ),
         ),
       ),
