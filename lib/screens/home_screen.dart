@@ -16,10 +16,13 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   final _service = FirestoreService();
   final _scrollController = ScrollController();
+  final _buscaCtrl = TextEditingController();
   late final Stream<List<Reserva>> _stream;
   DateTime _focusedDay = DateTime.now();
   int? _mesFiltro;
   int _anoFiltro = DateTime.now().year;
+  bool _buscando = false;
+  String _termoBusca = '';
 
   @override
   void initState() {
@@ -30,7 +33,18 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void dispose() {
     _scrollController.dispose();
+    _buscaCtrl.dispose();
     super.dispose();
+  }
+
+  void _abrirBusca() => setState(() => _buscando = true);
+
+  void _fecharBusca() {
+    setState(() {
+      _buscando = false;
+      _termoBusca = '';
+      _buscaCtrl.clear();
+    });
   }
 
   List<Reserva> _filtrarPorMes(List<Reserva> reservas) {
@@ -52,11 +66,29 @@ class _HomeScreenState extends State<HomeScreen> {
       appBar: AppBar(
         backgroundColor: const Color(0xFF2E7D32),
         foregroundColor: Colors.white,
-        title: const Text(
-          'Aluguel Sítio',
-          style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
-        ),
-        centerTitle: true,
+        title: _buscando
+            ? TextField(
+                controller: _buscaCtrl,
+                autofocus: true,
+                style: const TextStyle(color: Colors.white, fontSize: 18),
+                cursorColor: Colors.white,
+                decoration: const InputDecoration(
+                  hintText: 'Buscar por nome...',
+                  hintStyle: TextStyle(color: Colors.white60),
+                  border: InputBorder.none,
+                ),
+                onChanged: (v) => setState(() => _termoBusca = v),
+              )
+            : const Text(
+                'Aluguel Sítio',
+                style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+              ),
+        centerTitle: !_buscando,
+        actions: [
+          _buscando
+              ? IconButton(icon: const Icon(Icons.close), onPressed: _fecharBusca)
+              : IconButton(icon: const Icon(Icons.search), onPressed: _abrirBusca),
+        ],
       ),
       body: StreamBuilder<List<Reserva>>(
         stream: _stream,
@@ -104,6 +136,58 @@ class _HomeScreenState extends State<HomeScreen> {
               datasBloqueadas.add(d);
               d = d.add(const Duration(days: 1));
             }
+          }
+
+          if (_buscando) {
+            final termo = _termoBusca.toLowerCase().trim();
+            final resultados = termo.isEmpty
+                ? <Reserva>[]
+                : reservas
+                    .where((r) => r.nomeLocatario.toLowerCase().contains(termo))
+                    .toList();
+            return ListView(
+              controller: _scrollController,
+              padding: const EdgeInsets.only(bottom: 100),
+              children: [
+                if (termo.isEmpty)
+                  const Padding(
+                    padding: EdgeInsets.all(40),
+                    child: Column(
+                      children: [
+                        Icon(Icons.search, size: 64, color: Colors.grey),
+                        SizedBox(height: 16),
+                        Text(
+                          'Digite o nome do locatário.',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(fontSize: 18, color: Colors.grey),
+                        ),
+                      ],
+                    ),
+                  )
+                else if (resultados.isEmpty)
+                  const Padding(
+                    padding: EdgeInsets.all(40),
+                    child: Column(
+                      children: [
+                        Icon(Icons.person_search, size: 64, color: Colors.grey),
+                        SizedBox(height: 16),
+                        Text(
+                          'Nenhuma reserva encontrada.',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(fontSize: 18, color: Colors.grey),
+                        ),
+                      ],
+                    ),
+                  )
+                else ...[
+                  _SectionTitle(title: '${resultados.length} resultado${resultados.length == 1 ? '' : 's'}'),
+                  ...resultados.map((r) => _ReservaCard(
+                        reserva: r,
+                        onTap: () => _abrirDetalhe(r, reservas),
+                      )),
+                ],
+              ],
+            );
           }
 
           final proximas = _filtrarPorMes(reservas.where((r) => !r.isPast).toList());

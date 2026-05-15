@@ -600,26 +600,29 @@ class _ChipPagamento extends StatelessWidget {
         onTap: onTap,
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 150),
-          padding: const EdgeInsets.symmetric(vertical: 10),
+          padding: const EdgeInsets.symmetric(vertical: 12),
           decoration: BoxDecoration(
-            color: selecionado ? cor.withValues(alpha: 0.12) : Colors.white,
+            color: selecionado ? cor : Colors.grey.shade100,
             borderRadius: BorderRadius.circular(10),
             border: Border.all(
-              color: selecionado ? cor : Colors.grey.shade300,
-              width: selecionado ? 2 : 1,
+              color: selecionado ? cor : Colors.grey.shade400,
+              width: 1.5,
             ),
+            boxShadow: selecionado
+                ? [BoxShadow(color: cor.withValues(alpha: 0.3), blurRadius: 6, offset: const Offset(0, 2))]
+                : [],
           ),
           child: Column(
             children: [
-              Icon(icon, color: selecionado ? cor : Colors.grey, size: 22),
+              Icon(icon, color: selecionado ? Colors.white : Colors.grey.shade600, size: 22),
               const SizedBox(height: 4),
               Text(
                 label,
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 12,
-                  fontWeight: selecionado ? FontWeight.bold : FontWeight.normal,
-                  color: selecionado ? cor : Colors.grey,
+                  fontWeight: FontWeight.w600,
+                  color: selecionado ? Colors.white : Colors.grey.shade700,
                 ),
               ),
             ],
