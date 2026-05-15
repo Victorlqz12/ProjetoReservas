@@ -34,11 +34,14 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   List<Reserva> _filtrarPorMes(List<Reserva> reservas) {
-    if (_mesFiltro == null) return reservas;
-    final inicioMes = DateTime(_anoFiltro, _mesFiltro!, 1);
-    final fimMes = DateTime(_anoFiltro, _mesFiltro! + 1, 0);
+    final inicioFiltro = _mesFiltro != null
+        ? DateTime(_anoFiltro, _mesFiltro!, 1)
+        : DateTime(_anoFiltro, 1, 1);
+    final fimFiltro = _mesFiltro != null
+        ? DateTime(_anoFiltro, _mesFiltro! + 1, 0)
+        : DateTime(_anoFiltro, 12, 31);
     return reservas
-        .where((r) => !r.dataInicio.isAfter(fimMes) && !r.dataFim.isBefore(inicioMes))
+        .where((r) => !r.dataInicio.isAfter(fimFiltro) && !r.dataFim.isBefore(inicioFiltro))
         .toList();
   }
 
