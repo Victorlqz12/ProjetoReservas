@@ -16,9 +16,16 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   final _service = FirestoreService();
   final _scrollController = ScrollController();
+  late final Stream<List<Reserva>> _stream;
   DateTime _focusedDay = DateTime.now();
   int? _mesFiltro;
   int _anoFiltro = DateTime.now().year;
+
+  @override
+  void initState() {
+    super.initState();
+    _stream = _service.streamReservas();
+  }
 
   @override
   void dispose() {
@@ -49,7 +56,7 @@ class _HomeScreenState extends State<HomeScreen> {
         centerTitle: true,
       ),
       body: StreamBuilder<List<Reserva>>(
-        stream: _service.streamReservas(),
+        stream: _stream,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(
