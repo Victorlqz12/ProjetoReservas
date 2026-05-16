@@ -282,15 +282,25 @@ class _HomeScreenState extends State<HomeScreen> {
               _Calendario(
                 focusedDay: _focusedDay,
                 datasBloqueadas: datasBloqueadas,
-                onPageChanged: (d) => setState(() => _focusedDay = d),
+                onPageChanged: (d) => setState(() {
+                  _focusedDay = d;
+                  _mesFiltro = d.month;
+                  _anoFiltro = d.year;
+                }),
               ),
               _FiltroMes(
                 mesSelecionado: _mesFiltro,
                 anoSelecionado: _anoFiltro,
-                onMesSelecionado: (mes) => setState(() => _mesFiltro = mes),
+                onMesSelecionado: (mes) => setState(() {
+                  _mesFiltro = mes;
+                  if (mes != null) {
+                    _focusedDay = DateTime(_anoFiltro, mes, 1);
+                  }
+                }),
                 onAnoAlterado: (ano) => setState(() {
                   _anoFiltro = ano;
                   _mesFiltro = null;
+                  _focusedDay = DateTime(ano, 1, 1);
                 }),
               ),
               _ResumoFinanceiro(reservas: [...proximas, ...passadas]),
