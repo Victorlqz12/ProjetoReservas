@@ -467,6 +467,7 @@ class _Calendario extends StatelessWidget {
           lastDay: DateTime(2030),
           focusedDay: focusedDay,
           onPageChanged: onPageChanged,
+          availableGestures: AvailableGestures.none,
           daysOfWeekHeight: 32,
           headerStyle: const HeaderStyle(
             formatButtonVisible: false,
