@@ -1,6 +1,6 @@
 <h1 align="center">
   <br>
-  🏡 Aluguel Sítio Tureba
+  🏡 Aluguel Sítio
   <br>
 </h1>
 
